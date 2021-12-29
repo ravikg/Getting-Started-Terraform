@@ -45,24 +45,6 @@ resource "google_compute_route" "igw" {
   next_hop_gateway = "default-internet-gateway"
 }
 
-
-
-
-# resource "aws_route_table" "rtb" {
-#   vpc_id = google_compute_network.vpc.id
-
-#   route {
-#     cidr_block = "0.0.0.0/0"
-#     gateway_id = google_compute_route.igw.id
-#   }
-# }
-
-# resource "aws_route_table_association" "rta-subnet1" {
-#   subnet_id      = google_compute_subnetwork.subnet1.id
-#   route_table_id = aws_route_table.rtb.id
-# }
-
-
 # SECURITY GROUPS / FIREWALL #
 # Nginx security group 
 # INGRESS
@@ -84,19 +66,6 @@ resource "google_compute_firewall" "nginx-sg" {
   # this is implied allow egress rule in GCP via:
   # route (internet gateway), external ip
   # https://cloud.google.com/vpc/docs/firewalls#default_firewall_rules
-# resource "google_compute_firewall" "nginx-sg-egress" {
-#   name    = "nginx_sg-egress"
-#   network = google_compute_network.vpc.id
-
-#   # outbound internet access
-#   direction = "EGRESS"
-#   allow {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-# }
 
 # INSTANCES #
 resource "google_compute_instance" "nginx1" {
@@ -119,8 +88,7 @@ resource "google_compute_instance" "nginx1" {
   }
 
   # No need to attached firewall rule as that is applied at VPC level
-  # if needed tags can be added to instance and that tag can be used in firewall rule
-  # vpc_security_group_ids = [google_compute_firewall.nginx-sg.id]
+  # if needed network tags can be added to instance and that tag can be used in firewall rule
 
   metadata_startup_script = <<EOF
 #! /bin/bash
