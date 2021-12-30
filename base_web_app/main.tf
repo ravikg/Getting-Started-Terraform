@@ -12,7 +12,7 @@ provider "google" {
 ##################################################################################
 
 data "google_compute_image" "my_image" {
-  family = "ubuntu-2004-lts"
+  family  = "ubuntu-2004-lts"
   #needed as base image is from public
   project = "ubuntu-os-cloud" 
 }
@@ -25,23 +25,20 @@ data "google_compute_image" "my_image" {
 resource "google_compute_network" "vpc" {
   name                    = "test-vpc-network-terraform"
   auto_create_subnetworks = false
-  #cidr_block           = "10.0.0.0/16"
-  #enable_dns_hostnames = "true"
 }
 
 resource "google_compute_subnetwork" "subnet1" {
-  name = "test-subnetwork-terraform"
-  ip_cidr_range           = "10.0.0.0/24"
-  network                 = google_compute_network.vpc.id
-  region                 = "europe-west4"
-  #map_public_ip_on_launch = "true"
+  name          = "test-subnetwork-terraform"
+  ip_cidr_range = "10.0.0.0/24"
+  network       = google_compute_network.vpc.id
+  region        = "europe-west4"
 }
 
 # ROUTING #
 resource "google_compute_route" "igw" {
-  dest_range = "0.0.0.0/0"
-  name = "test-internet-gateway-terraform"
-  network = google_compute_network.vpc.id
+  dest_range       = "0.0.0.0/0"
+  name             = "test-internet-gateway-terraform"
+  network          = google_compute_network.vpc.id
   next_hop_gateway = "default-internet-gateway"
 }
 
@@ -53,7 +50,7 @@ resource "google_compute_firewall" "nginx-sg" {
   network = google_compute_network.vpc.id
 
   # HTTP access from anywhere
-  direction = "INGRESS"
+  direction     = "INGRESS"
   source_ranges = ["0.0.0.0/0"]
   allow {
     protocol    = "tcp"
@@ -69,14 +66,14 @@ resource "google_compute_firewall" "nginx-sg" {
 
 # INSTANCES #
 resource "google_compute_instance" "nginx1" {
-  name = "vm-terraform"
+  name         = "vm-terraform"
   machine_type = "e2-medium"
-  zone = "europe-west4-c"
+  zone         = "europe-west4-c"
 
   boot_disk {
     initialize_params {
       image = data.google_compute_image.my_image.self_link
-      type = "pd-ssd"
+      type  = "pd-ssd"
     }
   }
 
@@ -94,8 +91,8 @@ resource "google_compute_instance" "nginx1" {
 #! /bin/bash
 sudo apt install -y nginx
 sudo service nginx start
-sudo rm /usr/share/nginx/html/index.html
-echo '<html><head><title>Taco Team Server</title></head><body style=\"background-color:#1F778D\"><p style=\"text-align: center;\"><span style=\"color:#FFFFFF;\"><span style=\"font-size:28px;\">You did it! Have a &#127790;</span></span></p></body></html>' | sudo tee /usr/share/nginx/html/index.html
+sudo rm /var/www/html/index.html
+echo '<html><head><title>Taco Team Server</title></head><body style=\"background-color:#1F778D\"><p style=\"text-align: center;\"><span style=\"color:#FFFFFF;\"><span style=\"font-size:28px;\">You did it! Have a &#127790;</span></span></p></body></html>' | sudo tee /var/www/html/index.html
 EOF
 
 }
