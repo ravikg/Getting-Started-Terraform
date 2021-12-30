@@ -2,18 +2,19 @@
 # PROVIDERS
 ##################################################################################
 
-provider "aws" {
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
-  region     = var.aws_region
+provider "google" {
+  project = var.google_project
+  region  = var.gcp_region
 }
 
 ##################################################################################
 # DATA
 ##################################################################################
 
-data "aws_ssm_parameter" "ami" {
-  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+data "google_compute_image" "my_image" {
+  family  = var.compute_image_family
+  #needed as base image is from public
+  project =  var.compute_image_project
 }
 
 ##################################################################################
@@ -21,84 +22,90 @@ data "aws_ssm_parameter" "ami" {
 ##################################################################################
 
 # NETWORKING #
-resource "aws_vpc" "vpc" {
-  cidr_block           = var.vpc_cidr_block
-  enable_dns_hostnames = var.enable_dns_hostnames
-
-  tags = local.common_tags
+resource "google_compute_network" "vpc" {
+  name                    = "test-vpc-network-terraform"
+  auto_create_subnetworks = false
 }
 
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.vpc.id
-
-  tags = local.common_tags
-}
-
-resource "aws_subnet" "subnet1" {
-  cidr_block              = var.vpc_subnet1_cidr_block
-  vpc_id                  = aws_vpc.vpc.id
-  map_public_ip_on_launch = var.map_public_ip_on_launch
-
-  tags = local.common_tags
+resource "google_compute_subnetwork" "subnet1" {
+  name          = "test-subnetwork-terraform"
+  ip_cidr_range = var.ip_cidr_range
+  network       = google_compute_network.vpc.id
+  region        = var.gcp_region
 }
 
 # ROUTING #
-resource "aws_route_table" "rtb" {
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-
-  tags = local.common_tags
+resource "google_compute_route" "igw" {
+  dest_range       = var.route_destination_range
+  name             = "test-internet-gateway-terraform"
+  network          = google_compute_network.vpc.id
+  next_hop_gateway = "default-internet-gateway"
 }
 
-resource "aws_route_table_association" "rta-subnet1" {
-  subnet_id      = aws_subnet.subnet1.id
-  route_table_id = aws_route_table.rtb.id
-}
-
-# SECURITY GROUPS #
+# SECURITY GROUPS / FIREWALL #
 # Nginx security group 
-resource "aws_security_group" "nginx-sg" {
-  name   = "nginx_sg"
-  vpc_id = aws_vpc.vpc.id
-
-  # HTTP access from anywhere
-  ingress {
-    from_port   = 80
-    to_port     = 80
+# INGRESS - HTTP access from anywhere
+resource "google_compute_firewall" "nginx-sg" {
+  name          = "nginx-sg"
+  network       = google_compute_network.vpc.id
+  direction     = "INGRESS"
+  source_ranges = ["0.0.0.0/0"]
+  allow {
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    ports       = ["80"]
   }
-
-  # outbound internet access
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = local.common_tags
 }
+
+# INGRESS - Allow SSH from IAP
+# https://cloud.google.com/iap/docs/using-tcp-forwarding#create-firewall-rule
+resource "google_compute_firewall" "ssh-iap-terraform" {
+  name          = "ssh-iap-terraform"
+  network       = google_compute_network.vpc.id
+  direction     = "INGRESS"
+  source_ranges = ["35.235.240.0/20"]
+  allow {
+    protocol    = "tcp"
+    ports       = ["22"]
+  }
+}
+
+# EGRESS
+  # outbound internet access
+  # this is implied allow egress rule in GCP via:
+  # route (internet gateway), external ip
+  # https://cloud.google.com/vpc/docs/firewalls#default_firewall_rules
 
 # INSTANCES #
-resource "aws_instance" "nginx1" {
-  ami                    = nonsensitive(data.aws_ssm_parameter.ami.value)
-  instance_type          = var.instance_type
-  subnet_id              = aws_subnet.subnet1.id
-  vpc_security_group_ids = [aws_security_group.nginx-sg.id]
+resource "google_compute_instance" "nginx1" {
+  name                      = "vm-terraform"
+  machine_type              = var.compute_machine_type
+  zone                      = var.gcp_zone
+  allow_stopping_for_update = true
+  labels                    = local.common_tags
 
-  user_data = <<EOF
+  boot_disk {
+    initialize_params {
+      image = data.google_compute_image.my_image.self_link
+      type  = var.disk_type
+    }
+  }
+
+  network_interface {
+    subnetwork = google_compute_subnetwork.subnet1.id
+    access_config {
+      
+    }
+  }
+
+  # No need to attached firewall rule as that is applied at VPC level
+  # if needed network tags can be added to instance and that tag can be used in firewall rule
+
+  metadata_startup_script = <<EOF
 #! /bin/bash
-sudo amazon-linux-extras install -y nginx1
+sudo apt install -y nginx
 sudo service nginx start
-sudo rm /usr/share/nginx/html/index.html
-echo '<html><head><title>Taco Team Server</title></head><body style=\"background-color:#1F778D\"><p style=\"text-align: center;\"><span style=\"color:#FFFFFF;\"><span style=\"font-size:28px;\">You did it! Have a &#127790;</span></span></p></body></html>' | sudo tee /usr/share/nginx/html/index.html
+sudo rm /var/www/html/index.html
+echo '<html><head><title>Taco Team Server</title></head><body style=\"background-color:#1F778D\"><p style=\"text-align: center;\"><span style=\"color:#FFFFFF;\"><span style=\"font-size:28px;\">You did it! Have a &#127790;</span></span></p></body></html>' | sudo tee /var/www/html/index.html
 EOF
-
-  tags = local.common_tags
 
 }

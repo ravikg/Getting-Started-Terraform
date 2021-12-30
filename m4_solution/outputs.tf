@@ -1,3 +1,3 @@
-output "aws_instance_public_dns" {
-  value = aws_instance.nginx1.public_dns
+output "gcp_instance_public_dns" {
+  value = google_compute_instance.nginx1.network_interface.0.access_config.0.nat_ip
 }
