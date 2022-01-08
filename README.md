@@ -19,10 +19,13 @@ As subnetwork is a region level resource in GCP and not a zone level resource. W
 2. Or we can have only 1 subnetwork and create 2 different instance in separate zones
 
 > For simplicity, we create 2 different subnetwork
-We create 2 separate instance group and use load balancer module.
+
+We create 2 separate [instance group](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_group) and use load balancer module: [GoogleCloudPlatform/lb-http/google](https://registry.terraform.io/modules/GoogleCloudPlatform/lb-http/google/latest).
+
+[HTTP Load Balancer Example](https://github.com/terraform-google-modules/terraform-google-lb-http/tree/master/examples/multi-mig-http-lb)
 
 Note: We don't have to create new route / firewall rules as these are global resource and applies to VPC
 
 ### ToDo
 * Restrict access to instance only from load balancer using firewall rule
-* All anywhere to access Load balancer
+* Firewall rule: Allow anywhere to access Load balancer

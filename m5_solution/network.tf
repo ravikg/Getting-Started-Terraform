@@ -2,122 +2,77 @@
 # PROVIDERS
 ##################################################################################
 
-provider "aws" {
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
-  region     = var.aws_region
+provider "google" {
+  project = var.google_project
+  region  = var.gcp_region
 }
 
-##################################################################################
-# DATA
-##################################################################################
-
-data "aws_availability_zones" "available" {}
 
 ##################################################################################
 # RESOURCES
 ##################################################################################
 
 # NETWORKING #
-resource "aws_vpc" "vpc" {
-  cidr_block           = var.vpc_cidr_block
-  enable_dns_hostnames = var.enable_dns_hostnames
-
-  tags = local.common_tags
+resource "google_compute_network" "vpc" {
+  name                    = "vpc-network-terraform"
+  auto_create_subnetworks = false
 }
 
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.vpc.id
-
-  tags = local.common_tags
+resource "google_compute_subnetwork" "subnet1" {
+  name          = "subnet1-terraform"
+  ip_cidr_range = var.ip_cidr_ranges[0]
+  network       = google_compute_network.vpc.id
+  region        = var.gcp_region
 }
 
-resource "aws_subnet" "subnet1" {
-  cidr_block              = var.vpc_subnets_cidr_blocks[0]
-  vpc_id                  = aws_vpc.vpc.id
-  map_public_ip_on_launch = var.map_public_ip_on_launch
-  availability_zone       = data.aws_availability_zones.available.names[0]
-
-  tags = local.common_tags
-}
-
-resource "aws_subnet" "subnet2" {
-  cidr_block              = var.vpc_subnets_cidr_blocks[1]
-  vpc_id                  = aws_vpc.vpc.id
-  map_public_ip_on_launch = var.map_public_ip_on_launch
-  availability_zone       = data.aws_availability_zones.available.names[1]
-
-  tags = local.common_tags
+resource "google_compute_subnetwork" "subnet2" {
+  name          = "subnet2-terraform"
+  ip_cidr_range = var.ip_cidr_ranges[1]
+  network       = google_compute_network.vpc.id
+  region        = var.gcp_region
 }
 
 # ROUTING #
-resource "aws_route_table" "rtb" {
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-
-  tags = local.common_tags
+resource "google_compute_route" "igw" {
+  name             = "test-internet-gateway-terraform"
+  dest_range       = var.route_destination_range
+  network          = google_compute_network.vpc.id
+  next_hop_gateway = "default-internet-gateway"
 }
 
-resource "aws_route_table_association" "rta-subnet1" {
-  subnet_id      = aws_subnet.subnet1.id
-  route_table_id = aws_route_table.rtb.id
-}
-
-resource "aws_route_table_association" "rta-subnet2" {
-  subnet_id      = aws_subnet.subnet2.id
-  route_table_id = aws_route_table.rtb.id
-}
-
-# SECURITY GROUPS #
-# ALB Security Group
-resource "aws_security_group" "alb_sg" {
-  name   = "nginx_alb_sg"
-  vpc_id = aws_vpc.vpc.id
-
-  #Allow HTTP from anywhere
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  #allow all outbound
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = local.common_tags
-
-}
-
+# SECURITY GROUPS / FIREWALL #
 # Nginx security group 
-resource "aws_security_group" "nginx-sg" {
-  name   = "nginx_sg"
-  vpc_id = aws_vpc.vpc.id
+# INGRESS
+resource "google_compute_firewall" "nginx-sg" {
+  name    = "nginx-sg"
+  network = google_compute_network.vpc.id
 
-  # HTTP access from VPC
-  ingress {
-    from_port   = 80
-    to_port     = 80
+  # HTTP access from anywhere
+  direction     = "INGRESS"
+  source_ranges = ["0.0.0.0/0"]
+  allow {
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr_block]
+    ports       = ["80"]
   }
-
-  # outbound internet access
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = local.common_tags
 }
+
+# INGRESS
+resource "google_compute_firewall" "ssh-iap-terraform" {
+  name    = "ssh-iap-terraform"
+  network = google_compute_network.vpc.id
+
+  # Allow ingress from IAP for SSH
+  # https://cloud.google.com/iap/docs/using-tcp-forwarding#create-firewall-rule
+  direction     = "INGRESS"
+  source_ranges = ["35.235.240.0/20"]
+  allow {
+    protocol    = "tcp"
+    ports       = ["22"]
+  }
+}
+
+# EGRESS
+  # outbound internet access
+  # this is implied allow egress rule in GCP via:
+  # route (internet gateway), external ip
+  # https://cloud.google.com/vpc/docs/firewalls#default_firewall_rules

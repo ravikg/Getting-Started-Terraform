@@ -97,7 +97,7 @@ resource "google_compute_instance" "nginx1" {
     }
   }
 
-  # No need to attached firewall rule as that is applied at VPC level
+  # No need to attach firewall rule as that is applied at VPC level
   # if needed network tags can be added to instance and that tag can be used in firewall rule
 
   metadata_startup_script = <<EOF

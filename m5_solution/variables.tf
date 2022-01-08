@@ -1,63 +1,62 @@
-variable "aws_access_key" {
-  type        = string
-  description = "AWS Access Key"
-  sensitive   = true
+variable "google_project" {
+    type        = string
+    description = "Google Cloud Project Id"
 }
 
-variable "aws_secret_key" {
-  type        = string
-  description = "AWS Secret Key"
-  sensitive   = true
+variable "gcp_region" {
+  type    = string
+  default = "europe-west4"
 }
 
-variable "aws_region" {
-  type        = string
-  description = "Region for AWS Resources"
-  default     = "us-east-1"
+variable "gcp_zone" {
+  type    = string
+  default = "europe-west4-c"
 }
 
-variable "enable_dns_hostnames" {
-  type        = bool
-  description = "Enable DNS hostnames in VPC"
-  default     = true
+variable "compute_image_family" {
+  type    = string
+  default = "ubuntu-2004-lts"
 }
 
-variable "vpc_cidr_block" {
-  type        = string
-  description = "Base CIDR Block for VPC"
-  default     = "10.0.0.0/16"
+variable "compute_image_project" {
+  type    = string
+  default = "ubuntu-os-cloud"
 }
 
-variable "vpc_subnets_cidr_blocks" {
-  type        = list(string)
-  description = "CIDR Blocks for Subnets in VPC"
-  default     = ["10.0.0.0/24", "10.0.1.0/24"]
+variable "ip_cidr_ranges" {
+  type    = list(string)
+  default = ["10.0.0.0/24", "10.0.1.0/24"]
 }
 
-variable "map_public_ip_on_launch" {
-  type        = bool
-  description = "Map a public IP address for Subnet instances"
-  default     = true
+variable "route_destination_range" {
+  type    = string
+  default = "0.0.0.0/0"
 }
 
-variable "instance_type" {
-  type        = string
-  description = "Type for EC2 Instance"
-  default     = "t2.micro"
+variable "compute_machine_type" {
+  type    = string
+  default = "e2-medium"
+}
+
+variable "disk_type" {
+  type    = string
+  default = "pd-ssd"
 }
 
 variable "company" {
-  type        = string
-  description = "Company name for resource tagging"
-  default     = "Globomantics"
+  type    = string
+  default = "globomantics"
 }
 
 variable "project" {
-  type        = string
-  description = "Project name for resource tagging"
+  type = string
 }
 
 variable "billing_code" {
-  type        = string
-  description = "Billing code for resource tagging"
+  type = string
+}
+
+variable "network_prefix" {
+  type    = string
+  default = "multi-mig-lb-http"
 }
