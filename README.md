@@ -26,6 +26,21 @@ We create 2 separate [instance group](https://registry.terraform.io/providers/ha
 
 Note: We don't have to create new route / firewall rules as these are global resource and applies to VPC
 
-### ToDo
+### To Do
 * Restrict access to instance only from load balancer using firewall rule
 * Firewall rule: Allow anywhere to access Load balancer
+
+## Module 6
+Using following new resources:
+ * [google_storage_bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) : create a new bucket, with name using [random provider](https://registry.terraform.io/providers/hashicorp/random/latest/docs)
+ * [google_storage_bucket_object](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_object): upload website logo and index files
+ * [google_storage_bucket_iam_binding](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_iam#google_storage_bucket_iam_binding) : used this resource instead of [google_storage_bucket_iam_policy](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_iam#google_storage_bucket_iam_policy) as this was replacing existing IAM Policy and `google_storage_bucket_iam_binding` appends to existing IAM Policy
+    * using `google_storage_bucket_iam_policy` initially removed the service account access of terraform and it was complex to fix the bucket access issue
+    * had to use `gsutil -i <storage-admin service account> iam set` command to reset access, which uses `impersonation` with `token service access` role
+    * created a separate service account with no permission and this policy gave the required role
+* In `google_compute_instance` add `service_account` block to attach the above new service account which has access to the bucket; also adding th scope `storage-full` make `gsutil` available in the instance. 
+
+### To Do
+* Log traffic data to bucket
+  * write access log to bucket
+

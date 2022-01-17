@@ -1,6 +1,6 @@
 variable "google_project" {
-    type        = string
-    description = "Google Cloud Project Id"
+  type        = string
+  description = "Google Cloud Project Id"
 }
 
 variable "gcp_region" {

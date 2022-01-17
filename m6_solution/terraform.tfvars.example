@@ -1,3 +1,7 @@
-billing_code = "ACCT8675309"
+billing_code = "account123"
 
 project = "globo-web-app"
+
+iam_binding_policy_members = ["serviceAccount:<email id>"]
+
+instance_service_account_email = "<email id>"

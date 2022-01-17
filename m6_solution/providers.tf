@@ -1,18 +1,14 @@
-##################################################################################
-# TERRAFORM CONFIG
-##################################################################################
-
 terraform {
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 3.0"
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.0"
     }
+
     random = {
       source  = "hashicorp/random"
       version = "~> 3.0"
     }
-
   }
 }
 
@@ -20,6 +16,11 @@ terraform {
 # PROVIDERS
 ##################################################################################
 
-provider "aws" {
-  region = var.aws_region
+provider "google" {
+  project = var.google_project
+  region  = var.gcp_region
+}
+
+provider "random" {
+  # Configuration options
 }

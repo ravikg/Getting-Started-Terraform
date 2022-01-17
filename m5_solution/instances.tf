@@ -5,7 +5,7 @@
 data "google_compute_image" "my_image" {
   family  = var.compute_image_family
   #needed as base image is from public
-  project =  var.compute_image_project
+  project = var.compute_image_project
 }
 
 data "google_compute_zones" "available" {
@@ -34,7 +34,6 @@ resource "google_compute_instance" "nginx1" {
   network_interface {
     subnetwork = google_compute_subnetwork.subnet1.id
     access_config {
-      
     }
   }
 
@@ -68,7 +67,6 @@ resource "google_compute_instance" "nginx2" {
   network_interface {
     subnetwork = google_compute_subnetwork.subnet2.id
     access_config {
-      
     }
   }
 

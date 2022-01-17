@@ -7,7 +7,6 @@ provider "google" {
   region  = var.gcp_region
 }
 
-
 ##################################################################################
 # RESOURCES
 ##################################################################################
@@ -51,8 +50,8 @@ resource "google_compute_firewall" "nginx-sg" {
   direction     = "INGRESS"
   source_ranges = ["0.0.0.0/0"]
   allow {
-    protocol    = "tcp"
-    ports       = ["80"]
+    protocol = "tcp"
+    ports    = ["80"]
   }
 }
 
@@ -66,13 +65,13 @@ resource "google_compute_firewall" "ssh-iap-terraform" {
   direction     = "INGRESS"
   source_ranges = ["35.235.240.0/20"]
   allow {
-    protocol    = "tcp"
-    ports       = ["22"]
+    protocol = "tcp"
+    ports    = ["22"]
   }
 }
 
 # EGRESS
-  # outbound internet access
-  # this is implied allow egress rule in GCP via:
-  # route (internet gateway), external ip
-  # https://cloud.google.com/vpc/docs/firewalls#default_firewall_rules
+# outbound internet access
+# this is implied allow egress rule in GCP via:
+# route (internet gateway), external ip
+# https://cloud.google.com/vpc/docs/firewalls#default_firewall_rules

@@ -7,5 +7,5 @@ output "gcp_instance_public_dns_2" {
 }
 
 output "gcp_load_balancer_external_ip" {
-  value = module.gce-lb-http.external_ip  
+  value = module.gce-lb-http.external_ip
 }
